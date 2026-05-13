@@ -1,0 +1,33 @@
+===============================
+DAY 1 — SSH FAILED LOGIN ANALYSIS
+===============================
+
+. View all logs (all-logs.png)
+index=*
+
+. Search for failed events (failed.png)
+index=* failed
+
+. SSH failed login attempts (failed-login-results.png / search-results.png)
+index=* "Failed password"
+
+. Ubuntu authentication logs (ubuntu-login-logs.png)
+index=* source="/var/log/auth.log"
+
+. Preview logs (logs.results.png)
+index=main
+
+. Failed login trend over time (timechart.png / failed-password-timechart.png)
+index=* "Failed password"
+| timechart count
+
+. Top attacking IP addresses (top-ip-analysis.png)
+index=* "Failed password"
+| rex "from (?<ip>\d+\.\d+\.\d+\.\d+)"
+| stats count by ip
+| sort -count
+
+. Targeted usernames (targeted-users.png)
+index=* "Failed password"
+| rex "user (?<user>\w+)"
+| stats count by user

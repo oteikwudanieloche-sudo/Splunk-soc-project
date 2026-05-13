@@ -1,0 +1,111 @@
+Title: Web Log Analysis Using Splunk
+
+Objective
+The objective of this analysis is to monitor and investigate web server activity by analyzing Apache logs ingested into Splunk. This helps identify traffic patterns, errors, and suspicious behavior.
+
+. Log Ingestion Verification. The Apache access logs were successfully ingested into Splunk using the path:
+/var/log/apache2/access.log
+All logs were stored under the index:
+web_logs
+Search used:
+index=web_logs
+
+. Top IP Address Analysis
+Query:
+index=web_logs
+| rex "^(?<ip>\d+\.\d+\.\d+\\d+)"
+| stats count by ip
+| sort -count
+
+Findings:
+Identified the most active IP addresses accessing the server.
+High request volume from a single IP may indicate suspicious activity or scanning.
+
+. Most Requested Pages
+Query:
+index=web_logs
+| rex "\"(GET|POST) (?<url>\s+)"
+| stats count by url
+| sort -count
+
+or
+
+index=web_logs
+| stats count by uri_path
+| sort -count
+
+Findings:
+Shows the most frequently accessed web pages.
+Helps understand user behavior and targeted endpoints.
+
+. 404 Error Investigation
+Query:
+index=web_logs
+| rex "\"\s(?<status>\d{3})\s"
+| search status"404
+
+or
+
+
+index=web_logs status=404
+| stats count by clientip
+| sort -count
+
+Findings:
+Reveals IP addresses generating the most “Not Found” errors.
+High number of 404 errors may indicate:
+Directory brute-force attacks
+Automated scanning tools
+
+5. Traffic Trend Over Time
+Query:
+index=web_logs
+| timechart count
+
+Findings:
+Displays traffic patterns over time.
+Helps detect spikes that may indicate attacks or unusual activity
+
+. Suspicious Activity Detection
+Query:
+index=web_logs
+| rex "^(?<ip>\d+\.\d+\.\d+\.\d+)"
+| rex "\s(?<status>\d{3})\s"
+| stats count by ip status
+
+or
+
+index=web_logs
+| where like(uri_path, "%admin%") OR like(uri_path, "%login%")
+| stats count by clientip, uri_path
+| sort -count
+
+Findings:
+Identifies attempts to access sensitive endpoints.
+Repeated access attempts may indicate brute-force attacks.
+
+Short Field Extraction
+index=web_logs
+| rex "\s(?<status>\d{3})\s
+| table _raw status
+
+But For
+. Advanced Field Extraction
+Query:
+index=web_logs
+| rex "^(?<ip>\d+\.\d+\.\d+\.\d+)"
+| rex "\"\s(?<status>\d{3})\s"
+| stats count by ip, status
+| sort -count
+
+Findings:
+Extracted IP addresses and HTTP status codes manually.
+Provides deeper insight into request success/failure rates.
+
+Conclusion
+The analysis successfully demonstrated how Splunk can be used to:
+Monitor web traffic
+Detect suspicious activities
+Identify potential attacks
+Analyze server performance issues
+This process is essential for real-world SOC operations, where continuous monitoring and log analysis are critical for maintaining security.
